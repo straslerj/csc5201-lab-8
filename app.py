@@ -1,9 +1,12 @@
-from flask import Flask, request, jsonify
+from bson import ObjectId
+from flask import Flask, request, jsonify, render_template
+from flask_pymongo import PyMongo
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from service import UserService
 
 app = Flask(__name__)
+app.config["MONGO_URI"] = "mongodb://localhost:27017/users"
+mongo = PyMongo(app)
 
 
 @app.after_request
@@ -16,37 +19,40 @@ def add_headers(response):
     return response
 
 
-@app.route("/")
-def hello():
-    return (
-        "Welcome to this application!\n"
-        "To interact with the user service, you can use the following endpoints:\n"
-        "1. GET /user - Retrieve a list of users\n"
-        "2. POST /user - Create a new user. Provide JSON data with 'name' and 'location'\n"
-        "   Example: {'name': 'John Doe', 'location': 'Detroit, MI USA'}\n"
-        "3. DELETE /user/<user_id> - Delete a user by specifying the user's ID\n"
-    )
+@app.route("/", methods=["GET", "POST"])
+def user_management():
+    if request.method == "POST":
+        name = request.form.get("name")
+        location = request.form.get("location")
+
+        if not name or not location:
+            return jsonify({"message": "Name and location are required"}), 400
+
+        user_data = {
+            "name": name,
+            "location": location,
+            "distance_to_milwaukee": calculate_distance(location),
+        }
+
+        user_id = mongo.db.users.insert_one(user_data).inserted_id
+
+    users = mongo.db.users.find()
+    return render_template("user_management.html", users=users)
 
 
-@app.route("/user", methods=["GET"])
-def list_users():
-    return jsonify(UserService().list_users())
-
-
-@app.route("/user", methods=["POST"])
-def create_user():
-    data = request.get_json()
-    user_data = {
-        "name": data["name"],
-        "location": data["location"],
-        "distance_to_milwaukee": calculate_distance(data["location"]),
-    }
-    return jsonify(UserService().create_user(user_data))
-
-
-@app.route("/user/<user_id>", methods=["DELETE"])
+@app.route("/delete_user/<string:user_id>", methods=["POST"])
 def delete_user(user_id):
-    return jsonify(UserService().delete_user(user_id))
+    print(f"Deleting user with ID: {user_id}")
+    try:
+        user_object_id = ObjectId(user_id)
+    except:
+        return jsonify({"message": "Invalid user ID format"}), 400
+
+    result = mongo.db.users.delete_one({"_id": user_object_id})
+    if result.deleted_count == 1:
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False, "message": "User not found"}), 404
 
 
 def calculate_distance(hometown):
@@ -66,4 +72,4 @@ def calculate_distance(hometown):
 
 
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=5000)
+    app.run(debug=False, host="0.0.0.0", port=3999)
