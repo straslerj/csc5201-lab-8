@@ -1,0 +1,30 @@
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csc5201-lab-8
+spec:
+  selector: # Define the wrapping strategy
+    matchLabels: # Match all pods with the defined labels
+      app: csc5201-lab-8 # Labels follow the `name: value` template
+  template: # This is the template of the pod inside the deployment
+    metadata:
+      labels:
+        app: csc5201-lab-8
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+        - image: straslerj/csc5201-lab-8:latest
+          name: csc5201-lab-8
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          ports:
+            - containerPort: 5000
+              name: http
