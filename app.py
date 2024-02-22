@@ -1,9 +1,7 @@
 from flask import Flask, request, jsonify
-from service import UserService
 from geopy.geocoders import Nominatim
-
 from geopy.distance import geodesic
-
+from service import UserService
 
 app = Flask(__name__)
 
