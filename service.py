@@ -1,3 +1,6 @@
+# written by Dr. Jay Urbain for CSC 5201 Spring 2024
+
+
 class UserService:
     users = []
     user_id_counter = 1
