@@ -3,10 +3,23 @@ from flask import Flask, request, jsonify, render_template
 from flask_pymongo import PyMongo
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
+from pymongo.mongo_client import MongoClient
+
+print("Application starting...")
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/users"
+
+print("Connecting to MongoDB...")
+# MongoDB Atlas connection
+# I know it is bad practice to leave un/pw exposed but this feels low-stakes enough that I am going to anyways...
+uri = "mongodb+srv://lab8:lab8@users.kurd54v.mongodb.net/?retryWrites=true&w=majority&appName=users"
+client = MongoClient(uri)
+db = client.users  # Use the 'users' database
+
+app.config["MONGO_URI"] = uri
 mongo = PyMongo(app)
+
+print("Application successfully started and connected to MongoDB.")
 
 
 @app.after_request
@@ -34,9 +47,9 @@ def user_management():
             "distance_to_milwaukee": calculate_distance(location),
         }
 
-        user_id = mongo.db.users.insert_one(user_data).inserted_id
+        user_id = db.users.insert_one(user_data).inserted_id
 
-    users = mongo.db.users.find()
+    users = db.users.find()
     return render_template("user_management.html", users=users)
 
 
@@ -48,7 +61,7 @@ def delete_user(user_id):
     except:
         return jsonify({"message": "Invalid user ID format"}), 400
 
-    result = mongo.db.users.delete_one({"_id": user_object_id})
+    result = db.users.delete_one({"_id": user_object_id})
     if result.deleted_count == 1:
         return jsonify({"success": True})
     else:
@@ -72,4 +85,4 @@ def calculate_distance(hometown):
 
 
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=8000)
+    app.run(debug=True, host="0.0.0.0", port=8000)
