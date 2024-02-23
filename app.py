@@ -12,7 +12,7 @@ app = Flask(__name__)
 print("Connecting to MongoDB...")
 # MongoDB Atlas connection
 # I know it is bad practice to leave un/pw exposed but this feels low-stakes enough that I am going to anyways...
-uri = "mongodb+srv://lab8:lab8@users.kurd54v.mongodb.net/?retryWrites=true&w=majority&appName=users"
+uri = "mongodb+srv://<user>:<pw>@users.kurd54v.mongodb.net/?retryWrites=true&w=majority&appName=users"
 client = MongoClient(uri)
 db = client.users  # Use the 'users' database
 
