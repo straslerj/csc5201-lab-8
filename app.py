@@ -68,6 +68,39 @@ def delete_user(user_id):
         return jsonify({"success": False, "message": "User not found"}), 404
 
 
+@app.route("/api/", methods=["GET", "POST"])
+def api_users():
+    if request.method == "GET":
+        users = db.users.find()
+        user_list = []
+        for user in users:
+            user_list.append(
+                {
+                    "name": user["name"],
+                    "location": user["location"],
+                    "distance_to_milwaukee": user["distance_to_milwaukee"],
+                }
+            )
+        return jsonify({"users": user_list})
+
+    elif request.method == "POST":
+        name = request.form.get("name")
+        location = request.form.get("location")
+
+        if not name or not location:
+            return jsonify({"message": "Name and location are required"}), 400
+
+        user_data = {
+            "name": name,
+            "location": location,
+            "distance_to_milwaukee": calculate_distance(location),
+        }
+
+        user_id = db.users.insert_one(user_data).inserted_id
+
+        return jsonify({"message": "User added successfully", "user_id": str(user_id)})
+
+
 def calculate_distance(hometown):
     geolocator = Nominatim(user_agent="distance_calculator")
     milwaukee_location = geolocator.geocode("Milwaukee, WI, USA")
