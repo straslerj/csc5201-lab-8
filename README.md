@@ -1,7 +1,7 @@
 # CSC 5201 Microservices and Cloud Computing Lab 8
 
 
-## Instructions
+## Usage
 
 This API allows you to manage a list of users, including adding users with their name, location, and their calculated distance to Milwaukee, WI. Users can also be removed from the list.
 
