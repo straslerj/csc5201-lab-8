@@ -7,6 +7,8 @@ This API allows you to manage a list of users, including adding users with their
 
 The application has both a front end and API functionality. The front end renders HTML when adding or retrieving users whereas the API returns a list of dict objects. There is only one delete functionality that returns a JSON object (there is no delete which returns HTML.)
 
+The database for this application is MongoDB.
+
 Assuming you are running the application locally (`python app.py`),
 
 ### Base URL
