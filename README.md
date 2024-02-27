@@ -11,9 +11,9 @@ Assuming you are running the application locally (`python app.py`),
 
 ### Base URL
 
-The base URL for the API locally is `http://127.0.0.1:8000/`.
+The base URL for the API locally is `http://localhost:8000/`.
 
-The base URL for the API on Azure is `http://20.242.169.23:8000/`/
+The base URL for the API on Azure is `http://20.242.169.23:8000/`.
 
 ### Endpoints
 
