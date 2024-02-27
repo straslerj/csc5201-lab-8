@@ -1,23 +1,21 @@
 from bson import ObjectId
-from flask import Flask, request, jsonify, render_template
-from flask_pymongo import PyMongo
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from pymongo.mongo_client import MongoClient
+from pymongo import MongoClient
 
 print("Application starting...")
 
 app = Flask(__name__)
+CORS(app)
 
 print("Connecting to MongoDB...")
-# MongoDB Atlas connection
-# I know it is bad practice to leave un/pw exposed but this feels low-stakes enough that I am going to anyways...
 uri = "mongodb+srv://lab8:lab8@users.kurd54v.mongodb.net/?retryWrites=true&w=majority&appName=users"
 client = MongoClient(uri)
 db = client.users  # Use the 'users' database
 
 app.config["MONGO_URI"] = uri
-mongo = PyMongo(app)
 
 print("Application successfully started and connected to MongoDB.")
 
@@ -30,27 +28,6 @@ def add_headers(response):
     )
     response.headers["Access-Control-Allow-Methods"] = "POST, GET, PUT, DELETE, OPTIONS"
     return response
-
-
-@app.route("/", methods=["GET", "POST"])
-def user_management():
-    if request.method == "POST":
-        name = request.form.get("name")
-        location = request.form.get("location")
-
-        if not name or not location:
-            return jsonify({"message": "Name and location are required"}), 400
-
-        user_data = {
-            "name": name,
-            "location": location,
-            "distance_to_milwaukee": calculate_distance(location),
-        }
-
-        user_id = db.users.insert_one(user_data).inserted_id
-
-    users = db.users.find()
-    return render_template("user_management.html", users=users)
 
 
 @app.route("/delete_user/<string:user_id>", methods=["POST"])
@@ -68,37 +45,62 @@ def delete_user(user_id):
         return jsonify({"success": False, "message": "User not found"}), 404
 
 
-@app.route("/api/", methods=["GET", "POST"])
-def api_users():
-    if request.method == "GET":
-        users = db.users.find()
-        user_list = []
-        for user in users:
-            user_list.append(
-                {
-                    "name": user["name"],
-                    "location": user["location"],
-                    "distance_to_milwaukee": user["distance_to_milwaukee"],
-                }
-            )
-        return jsonify({"users": user_list})
+@app.route("/add_user", methods=["POST"])
+def add_user():
+    data = request.json
+    name = data.get("name")
+    location = data.get("location")
 
-    elif request.method == "POST":
-        name = request.form.get("name")
-        location = request.form.get("location")
+    if not name or not location:
+        return jsonify({"message": "Name and location are required"}), 400
 
-        if not name or not location:
-            return jsonify({"message": "Name and location are required"}), 400
+    user_data = {
+        "name": name,
+        "location": location,
+        "distance_to_milwaukee": calculate_distance(location),
+    }
 
-        user_data = {
-            "name": name,
-            "location": location,
-            "distance_to_milwaukee": calculate_distance(location),
-        }
+    user_id = db.users.insert_one(user_data).inserted_id
 
-        user_id = db.users.insert_one(user_data).inserted_id
+    return jsonify({"message": "User added successfully", "user_id": str(user_id)})
 
-        return jsonify({"message": "User added successfully", "user_id": str(user_id)})
+
+@app.route("/get_users", methods=["GET"])
+def get_users():
+    users = db.users.find()
+    user_list = []
+    for user in users:
+        user_list.append(
+            {
+                "_id": str(user["_id"]),  # Convert ObjectId to string
+                "name": user["name"],
+                "location": user["location"],
+                "distance_to_milwaukee": user["distance_to_milwaukee"],
+            }
+        )
+    return jsonify({"users": user_list})
+
+
+@app.route("/closest_person", methods=["GET"])
+def closest_person():
+    closest_user = db.users.find_one(
+        {},
+        sort=[("distance_to_milwaukee", 1)],
+        projection={"_id": False, "distance_to_milwaukee": False},
+    )
+
+    return jsonify({"closest_user": closest_user})
+
+
+@app.route("/furthest_person", methods=["GET"])
+def furthest_person():
+    furthest_user = db.users.find_one(
+        {},
+        sort=[("distance_to_milwaukee", -1)],
+        projection={"_id": False, "distance_to_milwaukee": False},
+    )
+
+    return jsonify({"furthest_user": furthest_user})
 
 
 def calculate_distance(hometown):

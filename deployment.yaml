@@ -15,7 +15,7 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       containers:
-        - image: straslerj/csc5201-lab-8:latest
+        - image: straslerj/csc5201-lab-8:v3
           name: csc5201-lab-8
           imagePullPolicy: Always
           resources:
